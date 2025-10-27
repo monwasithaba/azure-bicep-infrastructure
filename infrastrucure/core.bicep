@@ -40,3 +40,61 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
     ]
   }
 }
+
+resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' = {
+  name: '${prefix}-cosmos-account-sql'
+  location: location
+  kind: 'GlobalDocumentDB'
+  properties: {
+    consistencyPolicy: {
+      defaultConsistencyLevel: 'Session'
+      maxStalenessPrefix: 1
+      maxIntervalInSeconds: 5
+    }
+    locations: [
+      {
+        locationName: location
+        failoverPriority: 0
+      }
+    ]
+    databaseAccountOfferType: 'Standard'
+    enableAutomaticFailover: false
+    capabilities: [
+      {
+        name: 'EnableServerless'
+      }
+    ]
+  }
+}
+
+resource sqlDb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2021-06-15' = {
+  name: '${prefix}-sqldb'
+  parent: cosmosDbAccount
+  properties: {
+    resource: {
+      id: '${prefix}-sqldb'
+    }
+    options: {
+    }
+  }
+}
+
+
+resource sqlContainerName 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
+  parent: sqlDb 
+  name: '${prefix}-orders'
+  properties: {
+    resource: {
+      id: '${prefix}-orders'
+      partitionKey: {
+        paths: [
+            '/id'
+        ]
+      }
+    }
+    options: {}
+  }
+}
+
+
+
